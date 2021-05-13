@@ -11,6 +11,7 @@ var __assign = (this && this.__assign) || function () {
     return __assign.apply(this, arguments);
 };
 Object.defineProperty(exports, "__esModule", { value: true });
+// 작성일 2021.5.12  작성자 김민수
 var mqtt_1 = require("mqtt");
 require("dotenv/config");
 var mysql_1 = require("mysql");
@@ -19,9 +20,13 @@ var Mqtt = /** @class */ (function () {
      * 생성자 : MQTT의 브로커에 연결하는 역할을 한다.
      * @param connectInfo MQTT연결시 연결될 정보들이다. (connectType에 커서 올림 또는 Types.ts파일 참고)
      */
-    function Mqtt(connectInfo) {
+    function Mqtt(connectInfo, topic) {
         var _this = this;
-        this.subscribeResult = {}; // subscibe 설정 후 수신되는 데이터를 저장하는 객체
+        this.subscribeResult = {
+            deviceId: 0,
+            time: '',
+            count: 0
+        }; // subscibe 설정 후 수신되는 데이터를 저장하는 객체
         try {
             this.cli = mqtt_1.connect(connectInfo);
             this.cli.on("error", function (_) {
@@ -29,7 +34,7 @@ var Mqtt = /** @class */ (function () {
             });
             this.cli.on("connect", function (msg) {
                 console.log("MQTT \uC5F0\uACB0\uC131\uACF5! \uD604\uC7AC MQTT \uC5F0\uACB0\uC0C1\uD0DC " + msg);
-                _this.cli.subscribe('/device/MCT', function (err, granted) {
+                _this.cli.subscribe(topic, function (err, granted) {
                     console.log(granted[0].topic + "\uC5D0 \uAD6C\uB3C5\uC744 \uC2DC\uC791\uD558\uC600\uC2B5\uB2C8\uB2E4!");
                     if (err)
                         throw err;
@@ -110,7 +115,7 @@ var Mqtt = /** @class */ (function () {
         var _this = this;
         this.cli.on('message', function (topic, message, packet) {
             _this.subscribeResult = __assign(__assign({}, JSON.parse(message)), { topic: topic });
-            console.log(_this.subscribeResult);
+            _this.excuteSelectQuery("\n            INSERT INTO EqTagRollUpDataHs \n            (TagId, EventDt, PassDt, TagValue) \n            VALUES ('000" + _this.subscribeResult.deviceId + "', NOW(), \n            '" + _this.subscribeResult.time + "', " + _this.subscribeResult.count + ");\n            ");
         });
     };
     return Mqtt;

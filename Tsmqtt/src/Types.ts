@@ -1,3 +1,4 @@
+// 작성일 2021.5.12  작성자 김민수
 export type connectType = {
     host: string
     port: number,
@@ -11,4 +12,10 @@ export type mysqlConnectType = {
     user: string,
     password: string,
     database: string
+}
+
+export type queryResultType = {
+    deviceId: number,
+    time: string,
+    count: number
 }

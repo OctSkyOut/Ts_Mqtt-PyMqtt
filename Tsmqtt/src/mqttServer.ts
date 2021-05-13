@@ -1,20 +1,25 @@
+// 작성일 2021.5.12  작성자 김민수
 import { connect } from "mqtt";
 import 'dotenv/config';
 import { createConnection, Connection } from 'mysql'
 
 // 타입
-import { connectType, mysqlConnectType } from './Types'
+import { connectType, mysqlConnectType, queryResultType } from './Types'
 
 export default class Mqtt {
     cli; // 클라이언트 객체
     mysql: Connection | undefined; // mysql객체
-    subscribeResult: object = {}; // subscibe 설정 후 수신되는 데이터를 저장하는 객체
+    subscribeResult = {
+        deviceId: 0,
+        time: '',
+        count: 0
+    }; // subscibe 설정 후 수신되는 데이터를 저장하는 객체
 
     /**
      * 생성자 : MQTT의 브로커에 연결하는 역할을 한다.
      * @param connectInfo MQTT연결시 연결될 정보들이다. (connectType에 커서 올림 또는 Types.ts파일 참고) 
      */
-    constructor(connectInfo: connectType) {
+    constructor(connectInfo: connectType, topic: string) {
         try {
             this.cli = connect(connectInfo);
             this.cli.on("error", (_) => {
@@ -22,7 +27,7 @@ export default class Mqtt {
             });
             this.cli.on("connect", (msg) => {
                 console.log(`MQTT 연결성공! 현재 MQTT 연결상태 ${msg}`);
-                this.cli.subscribe('/device/MCT', (err, granted) => {
+                this.cli.subscribe(topic, (err, granted) => {
                     console.log(`${granted[0].topic}에 구독을 시작하였습니다!`);
                     if (err) throw err;
                 });
@@ -53,9 +58,9 @@ export default class Mqtt {
      * @returns 열의 정보가 키값, 셀의 값이 값이되며, 행의 개수가 객체의 개수로 된 배열안의 객체의 값을리턴
      * ##### ex) 리턴값이 2열 2행이라면 -> [{a : 1, b : 'A'}, {a : 2, b : 'B'} ] 
      */
-    excuteSelectQuery(query: string): object[] {
-        let res: object[] = [];
-        this.mysql?.query(query, (err, result: object[]) => {
+    excuteSelectQuery(query: string): queryResultType[] {
+        let res: queryResultType[] = [];
+        this.mysql?.query(query, (err, result: queryResultType[]) => {
             try {
                 if (err) throw err;
                 console.log('SELECT 쿼리 처리완료');
@@ -97,7 +102,12 @@ export default class Mqtt {
     mqttSubscribe(): void {
         this.cli.on('message', (topic: string, message: string, packet) => {
             this.subscribeResult = { ...JSON.parse(message), topic }
-            console.log(this.subscribeResult);
+            this.excuteSelectQuery(`
+            INSERT INTO EqTagRollUpDataHs 
+            (TagId, EventDt, PassDt, TagValue) 
+            VALUES ('000${this.subscribeResult.deviceId}', NOW(), 
+            '${this.subscribeResult.time}', ${this.subscribeResult.count});
+            `)
         });
     }
 }

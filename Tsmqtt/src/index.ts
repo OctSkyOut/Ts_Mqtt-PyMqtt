@@ -1,3 +1,4 @@
+// 작성일 2021.5.12  작성자 김민수
 import Mqtt from "./mqttServer";
 
 /**
@@ -9,8 +10,7 @@ const mqtt = new Mqtt({
     protocol: 'mqtt',
     username: 'admin',
     password: 'password',
-
-});
+}, '/topic');
 
 // subscribe 실행
 mqtt.mqttSubscribe();
