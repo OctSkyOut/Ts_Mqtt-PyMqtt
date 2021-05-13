@@ -94,7 +94,7 @@ def single_publish(sendData: dict):
             client_id=f"""Hidata_device{device_id}""",
             keepalive=60,
             will=None,
-            auth=None,
+            auth={"username": username, "password": client_pw},
             tls=None,
         )
     except Exception as err:
@@ -126,7 +126,7 @@ def subscribe_and_sendDB(client: mqtt_client):
                         INSERT INTO EqTagRollUpDataHs
                         (TagId, EventDt, PassDt, TagValue)
                         VALUES
-                        ('000{device_id}', NOW(), '{sub_res["time"]}', {sub_res["count"]});
+                        ('000{sub_res["deviceId"]}', NOW(), '{sub_res["time"]}', {sub_res["count"]});
                     """
             #########################################################
             # 쿼리 처리
